@@ -222,8 +222,34 @@ pub const types = struct {
             }),
         };
 
+        // typedef struct
+        // {
+        // __IM  uint32_t CPUID;                  /*!< Offset: 0x000 (R/ )  CPUID Base Register */
+        // __IOM uint32_t ICSR;                   /*!< Offset: 0x004 (R/W)  Interrupt Control and State Register */
+        // __IOM uint32_t VTOR;                   /*!< Offset: 0x008 (R/W)  Vector Table Offset Register */
+        // __IOM uint32_t AIRCR;                  /*!< Offset: 0x00C (R/W)  Application Interrupt and Reset Control Register */
+        // __IOM uint32_t SCR;                    /*!< Offset: 0x010 (R/W)  System Control Register */
+        // __IOM uint32_t CCR;                    /*!< Offset: 0x014 (R/W)  Configuration Control Register */
+        // __IOM uint8_t  SHP[12U];               /*!< Offset: 0x018 (R/W)  System Handlers Priority Registers (4-7, 8-11, 12-15) */
+        // __IOM uint32_t SHCSR;                  /*!< Offset: 0x024 (R/W)  System Handler Control and State Register */
+        // __IOM uint32_t CFSR;                   /*!< Offset: 0x028 (R/W)  Configurable Fault Status Register */
+        // __IOM uint32_t HFSR;                   /*!< Offset: 0x02C (R/W)  HardFault Status Register */
+        // __IOM uint32_t DFSR;                   /*!< Offset: 0x030 (R/W)  Debug Fault Status Register */
+        // __IOM uint32_t MMFAR;                  /*!< Offset: 0x034 (R/W)  MemManage Fault Address Register */
+        // __IOM uint32_t BFAR;                   /*!< Offset: 0x038 (R/W)  BusFault Address Register */
+        // __IOM uint32_t AFSR;                   /*!< Offset: 0x03C (R/W)  Auxiliary Fault Status Register */
+        // __IM  uint32_t PFR[2U];                /*!< Offset: 0x040 (R/ )  Processor Feature Register */
+        // __IM  uint32_t DFR;                    /*!< Offset: 0x048 (R/ )  Debug Feature Register */
+        // __IM  uint32_t ADR;                    /*!< Offset: 0x04C (R/ )  Auxiliary Feature Register */
+        // __IM  uint32_t MMFR[4U];               /*!< Offset: 0x050 (R/ )  Memory Model Feature Register */
+        // __IM  uint32_t ISAR[5U];               /*!< Offset: 0x060 (R/ )  Instruction Set Attributes Register */
+        //         uint32_t RESERVED0[5U];
+        // __IOM uint32_t CPACR;                  /*!< Offset: 0x088 (R/W)  Coprocessor Access Control Register */
+        // } SCB_Type;
+
         ///  System Control Block
         pub const SCB = extern struct {
+            /// /*!< Offset: 0x000 (R/ )  CPUID Base Register */
             CPUID: mmio.Mmio(packed struct(u32) {
                 REVISION: u4,
                 PARTNO: u12,
@@ -232,6 +258,7 @@ pub const types = struct {
                 IMPLEMENTER: u8,
             }),
             ///  Interrupt Control and State Register
+            /// /*!< Offset: 0x004 (R/W)  Interrupt Control and State Register */
             ICSR: mmio.Mmio(packed struct(u32) {
                 VECTACTIVE: u9,
                 reserved12: u3,
@@ -248,11 +275,13 @@ pub const types = struct {
                 NMIPENDSET: u1,
             }),
             ///  Vector Table Offset Register
+            /// /*!< Offset: 0x008 (R/W)  Vector Table Offset Register */
             VTOR: mmio.Mmio(packed struct(u32) {
                 reserved8: u8,
                 TBLOFF: u24,
             }),
             ///  Application Interrupt and Reset Control Register
+            /// /*!< Offset: 0x00C (R/W)  Application Interrupt and Reset Control Register */
             AIRCR: mmio.Mmio(packed struct(u32) {
                 reserved1: u1,
                 VECTCLRACTIVE: u1,
@@ -262,6 +291,7 @@ pub const types = struct {
                 VECTKEY: u16,
             }),
             ///  System Control Register
+            /// /*!< Offset: 0x010 (R/W)  System Control Register */
             SCR: mmio.Mmio(packed struct(u32) {
                 reserved1: u1,
                 SLEEPONEXIT: u1,
@@ -271,6 +301,7 @@ pub const types = struct {
                 padding: u27,
             }),
             ///  Configuration Control Register
+            /// /*!< Offset: 0x014 (R/W)  Configuration Control Register */
             CCR: mmio.Mmio(packed struct(u32) {
                 reserved3: u3,
                 UNALIGN_TRP: u1,
@@ -280,14 +311,32 @@ pub const types = struct {
             }),
             reserved28: [4]u8,
             ///  System Handlers Priority Registers. [0] is RESERVED
+            /// __IOM uint8_t  SHP[12U];               /*!< Offset: 0x018 (R/W)  System Handlers Priority Registers (4-7, 8-11, 12-15) */
             SHP: u32,
             reserved36: [4]u8,
             ///  System Handler Control and State Register
+            /// /*!< Offset: 0x024 (R/W)  System Handler Control and State Register */
             SHCSR: mmio.Mmio(packed struct(u32) {
                 reserved15: u15,
                 SVCALLPENDED: u1,
                 padding: u16,
             }),
+
+            /// /*!< Offset: 0x028 (R/W)  Configurable Fault Status Register */
+            CFSR: u32,
+            HFSR: u32,
+            DFSR: u32,
+            MMFAR: u32,
+            BFAR: u32,
+            AFSR: u32,
+            PFR: [2]u32,
+            DFR: u32,
+            ADR: u32,
+            MMFR: [4]u32,
+            ISAR: [5]u32,
+            reserved37: [5]u32,
+
+            CPACR: u32,
         };
     };
 };
