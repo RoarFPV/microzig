@@ -123,8 +123,13 @@ pub var vector_table: VectorTable = blk: {
         .initial_stack_pointer = microzig.config.end_of_stack,
         .Reset = .{ .C = microzig.cpu.startup_logic._start },
     };
-    if (@hasDecl(root, "microzig_options") and @hasDecl(root.microzig_options, "interrupts")) {
-        const interrupts = root.microzig_options.interrupts;
+
+    const interrupts = if (@hasDecl(root, "microzig_options") and @hasDecl(root.microzig_options, "interrupts"))
+        root.microzig_options.interrupts
+    else if (microzig.hal != void and @hasDecl(microzig.hal, "microzig_options") and @hasDecl(microzig.hal.microzig_options, "interrupts"))
+        microzig.hal.microzig_options.interrupts;
+
+    if (interrupts != void) {
         if (@typeInfo(interrupts) != .Struct)
             @compileLog("root.interrupts must be a struct");
 
