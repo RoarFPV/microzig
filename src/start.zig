@@ -51,6 +51,9 @@ comptime {
     // .rodata is not always necessary to be populated (flash based systems
     // can just index flash, while harvard or flash-less architectures need
     // to copy .rodata into RAM).
+    //std.debug.assert(microzig.cpu.startup_logic != void);
+    //@compileLog("startup_logic = ", microzig.cpu.startup_logic);
+
     _ = microzig.cpu.startup_logic;
 
     // Export the vector table to flash start if we have any.
@@ -146,16 +149,23 @@ pub fn initialize_system_memories() void {
         const bss_end: [*]u8 = @ptrCast(&sections.microzig_bss_end);
         const bss_len = @intFromPtr(bss_end) - @intFromPtr(bss_start);
 
-        @memset(bss_start[0..bss_len], 0);
+        if (bss_len > 0)
+            @memset(bss_start[0..bss_len], 0);
     }
 
     // load .data from flash
     {
-        const data_start: [*]u8 = @ptrCast(&sections.microzig_data_start);
-        const data_end: [*]u8 = @ptrCast(&sections.microzig_data_end);
-        const data_len = @intFromPtr(data_end) - @intFromPtr(data_start);
-        const data_src: [*]const u8 = @ptrCast(&sections.microzig_data_load_start);
+        // when running from ram so this data is already in the correct
+        var mz_data_start = &sections.microzig_data_start;
+        var mz_data_load_start = &sections.microzig_data_load_start;
 
-        @memcpy(data_start[0..data_len], data_src[0..data_len]);
+        if (mz_data_start != mz_data_load_start) {
+            const data_start: [*]u8 = @ptrCast(&sections.microzig_data_start);
+            const data_end: [*]u8 = @ptrCast(&sections.microzig_data_end);
+            const data_len = @intFromPtr(data_end) - @intFromPtr(data_start);
+            const data_src: [*]const u8 = @ptrCast(&sections.microzig_data_load_start);
+
+            @memcpy(data_start[0..data_len], data_src[0..data_len]);
+        }
     }
 }

@@ -56,7 +56,7 @@ pub const startup_logic = struct {
     extern var microzig_bss_end: u8;
     extern const microzig_data_load_start: u8;
 
-    pub fn _start() callconv(.C) noreturn {
+    export fn _start() linksection("microzig_flash_start") callconv(.C) noreturn {
 
         // fill .bss with zeroes
         {
