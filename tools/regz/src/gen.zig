@@ -431,6 +431,9 @@ fn write_enum(db: Database, enum_id: EntityId, out_writer: anytype) !void {
     const name = db.attrs.name.get(enum_id) orelse return;
     const size = db.attrs.size.get(enum_id) orelse return error.MissingEnumSize;
 
+    const field_set = db.children.enum_fields.get(enum_id) orelse return;
+    _ = field_set;
+
     // TODO: handle this instead of assert
     // assert(std.math.ceilPowerOfTwo(field_set.count()) <= size);
 
@@ -453,7 +456,10 @@ fn write_enum_fields(db: Database, enum_id: u32, out_writer: anytype) !void {
 
     const writer = buffer.writer();
     const size = db.attrs.size.get(enum_id) orelse return error.MissingEnumSize;
-    const field_set = db.children.enum_fields.get(enum_id) orelse return error.MissingEnumFields;
+    const field_set = db.children.enum_fields.get(enum_id) orelse {
+        log.err("enum: {} missing fields", .{enum_id});
+        return error.MissingEnumFields;
+    };
     for (field_set.keys()) |enum_field_id|
         try write_enum_field(db, enum_field_id, size, writer);
 
@@ -617,6 +623,7 @@ fn write_registers_base(
             if (db.attrs.name.get(registers[i].id)) |name|
                 log.warn("skipping register: {s}", .{name});
 
+            log.warn("skipping register: {}", .{i});
             i += 1;
             continue;
         }
@@ -647,7 +654,9 @@ fn write_registers_base(
 
         try write_register(db, next.id, writer);
         // TODO: round up to next power of two
-        assert(next.size % 8 == 0);
+        if (next.size % 8 != 0) {
+            log.err("{}@0x{x}: size of {} is not byte aligned", .{ next.id, next.offset, next.size });
+        }
         offset += next.size / 8;
         i = end;
     }
@@ -811,29 +820,22 @@ fn write_fields(
         } else if (db.attrs.@"enum".get(fields[i].id)) |enum_id| {
             if (db.attrs.name.get(enum_id)) |enum_name| {
                 try writer.print(
-                    \\{}: packed union {{
-                    \\    raw: u{},
-                    \\    value: {},
-                    \\}},
+                    \\{}: {},
                     \\
                 , .{
                     std.zig.fmtId(name),
-                    next.size,
                     std.zig.fmtId(enum_name),
                 });
             } else {
                 try writer.print(
-                    \\{}: packed union {{
-                    \\    raw: u{},
-                    \\    value: enum(u{}) {{
+                    \\{}: enum(u{}) {{
                     \\
                 , .{
                     std.zig.fmtId(name),
                     next.size,
-                    next.size,
                 });
                 try write_enum_fields(db, enum_id, writer);
-                try writer.writeAll("},\n},\n");
+                try writer.writeAll("},\n");
             }
         } else {
             try writer.print("{s}: u{},\n", .{ name, next.size });
@@ -845,7 +847,7 @@ fn write_fields(
 
     assert(offset <= register_size);
     if (offset < register_size)
-        try writer.print("padding: u{},\n", .{register_size - offset});
+        try writer.print("padding: u{}=0,\n", .{register_size - offset});
 
     try out_writer.writeAll(buffer.items);
 }
@@ -957,7 +959,7 @@ test "gen.peripherals with a shared type" {
         \\        pub const TEST_PERIPHERAL = extern struct {
         \\            TEST_REGISTER: mmio.Mmio(packed struct(u32) {
         \\                TEST_FIELD: u1,
-        \\                padding: u31,
+        \\                padding: u31=0,
         \\            }),
         \\        };
         \\    };
@@ -1011,14 +1013,14 @@ test "gen.peripheral with modes" {
         \\                TEST_REGISTER1: u32,
         \\                COMMON_REGISTER: mmio.Mmio(packed struct(u32) {
         \\                    TEST_FIELD: u1,
-        \\                    padding: u31,
+        \\                    padding: u31=0,
         \\                }),
         \\            },
         \\            TEST_MODE2: extern struct {
         \\                TEST_REGISTER2: u32,
         \\                COMMON_REGISTER: mmio.Mmio(packed struct(u32) {
         \\                    TEST_FIELD: u1,
-        \\                    padding: u31,
+        \\                    padding: u31=0,
         \\                }),
         \\            },
         \\        };
@@ -1111,7 +1113,7 @@ test "gen.field with named enum" {
         \\                    raw: u4,
         \\                    value: TEST_ENUM,
         \\                },
-        \\                padding: u4,
+        \\                padding: u4=0,
         \\            }),
         \\        };
         \\    };
@@ -1144,7 +1146,7 @@ test "gen.field with anonymous enum" {
         \\                        _,
         \\                    },
         \\                },
-        \\                padding: u4,
+        \\                padding: u4=0,
         \\            }),
         \\        };
         \\    };
@@ -1353,7 +1355,7 @@ test "gen.register with count and fields" {
         \\        pub const PORTB = extern struct {
         \\            PORTB: [4]mmio.Mmio(packed struct(u8) {
         \\                TEST_FIELD: u4,
-        \\                padding: u4,
+        \\                padding: u4=0,
         \\            }),
         \\            DDRB: u8,
         \\            PINB: u8,
@@ -1380,9 +1382,9 @@ test "gen.field with count, width of one, offset, and padding" {
         \\    pub const peripherals = struct {
         \\        pub const PORTB = extern struct {
         \\            PORTB: mmio.Mmio(packed struct(u8) {
-        \\                reserved2: u2,
+        \\                reserved2: u2=0,
         \\                TEST_FIELD: packed struct(u5) { u1, u1, u1, u1, u1 },
-        \\                padding: u1,
+        \\                padding: u1=0,
         \\            }),
         \\        };
         \\    };
@@ -1407,9 +1409,9 @@ test "gen.field with count, multi-bit width, offset, and padding" {
         \\    pub const peripherals = struct {
         \\        pub const PORTB = extern struct {
         \\            PORTB: mmio.Mmio(packed struct(u8) {
-        \\                reserved2: u2,
+        \\                reserved2: u2=0,
         \\                TEST_FIELD: packed struct(u4) { u2, u2 },
-        \\                padding: u2,
+        \\                padding: u2=0,
         \\            }),
         \\        };
         \\    };

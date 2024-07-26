@@ -17,6 +17,7 @@
         .@"bsp/stmicro/stm32" = .{ .path = "bsp/stmicro/stm32" },
         .@"bsp/espressif/esp" = .{ .path = "bsp/espressif/esp" },
         .@"bsp/raspberrypi/rp2040" = .{ .path = "bsp/raspberrypi/rp2040" },
+        .@"bsp/quicklogic/eos-s3" = .{ .path = "bsp/quicklogic/eos-s3" },
 
         // examples so that we can build them all in one go
         .@"examples/nordic/nrf5x" = .{ .path = "examples/nordic/nrf5x" },
@@ -27,6 +28,7 @@
         .@"examples/stmicro/stm32" = .{ .path = "examples/stmicro/stm32" },
         .@"examples/espressif/esp" = .{ .path = "examples/espressif/esp" },
         .@"examples/raspberrypi/rp2040" = .{ .path = "examples/raspberrypi/rp2040" },
+        .@"examples/quicklogic/eos-s3" = .{ .path = "examples/quicklogic/eos-s3" },
 
         // used for creating package tarballs
         .boxzer = .{

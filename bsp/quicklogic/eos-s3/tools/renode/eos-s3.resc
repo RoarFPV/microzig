@@ -1,0 +1,28 @@
+mach create "eos-s3"
+
+machine LoadPlatformDescription @platforms/boards/eos-s3-quickfeather.repl
+
+using sysbus
+
+
+$bin ?= @zig-out/firmware/blinky.elf
+
+macro reset
+"""
+    logLevel 0
+    sysbus.cpu VectorTableOffset 0x08000000
+    #sysbus.cpu ExecutionMode SingleStep
+    sysbus LogAllPeripheralsAccess true
+    sysbus.cpu LogFunctionNames true
+    
+    sysbus LoadELF $bin
+"""
+
+
+
+
+runMacro $reset
+
+machine StartGdbServer 3333
+
+showAnalyzer uart

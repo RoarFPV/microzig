@@ -221,9 +221,10 @@ fn arch_from_str(str: []const u8) Database.Arch {
 
 pub fn derive_entity(ctx: Context, id: EntityId, derived_name: []const u8) !void {
     const db = ctx.db;
-    log.debug("{}: derived from {s}", .{ id, derived_name });
+
     const entity_type = db.get_entity_type(id);
     assert(entity_type != null);
+    log.info("{}: derived from {s}, type:{any}", .{ id, derived_name, entity_type });
     switch (entity_type.?) {
         .peripheral => {
             // TODO: what do we do when we have other fields set? maybe make
@@ -244,10 +245,36 @@ pub fn derive_entity(ctx: Context, id: EntityId, derived_name: []const u8) !void
                     if (used_peripheral_id == maybe_remove_peripheral_id)
                         break;
                 } else {
-                    // no instance is using this peripheral so we can remove it
+                    // no instance ims using this peripheral so we can remove it
                     db.destroy_entity(maybe_remove_peripheral_id);
                 }
             }
+        },
+        .@"enum" => {
+            const name = db.attrs.name.get(id);
+            const target_enum_id = try db.get_entity_id_by_name("type.enum", derived_name);
+            log.debug("derived: {s} is field: {}", .{ derived_name, target_enum_id });
+
+            // actual enum valued used by `derived_name`
+            // const target_enum_id = db.attrs.@"enum".get(field_id) orelse return error.DerivedReferenceIsNotEnum;
+
+            if (ctx.derived_entities.contains(target_enum_id)) {
+                log.warn("TODO: chained enum derivation: {?s}", .{name});
+                return error.TodoChainedDerivation;
+            }
+
+            // replace all references to this enum (field_id) with the
+            // target enum (target_enum_id)
+            // probably a `zig` way to do this?
+            for (db.attrs.@"enum".keys()) |field_owner_id| {
+                if (db.attrs.@"enum".get(field_owner_id) == id) {
+                    try db.attrs.@"enum".put(db.gpa, field_owner_id, target_enum_id);
+                }
+            }
+
+            db.destroy_entity(id);
+
+            //try db.attrs.@"enum".putNoClobber(db.gpa, parent_id, field_id);
         },
         else => {
             log.warn("TODO: implement derivation for {?}", .{entity_type});
@@ -496,12 +523,15 @@ fn load_enumerated_values(ctx: *Context, node: xml.Node, field_id: EntityId) !vo
 
     const id = try db.create_enum(peripheral_id, .{
         // TODO: find solution to potential name collisions for enums at the peripheral level.
-        //.name = node.get_value("name"),
+        .name = node.get_value("name"),
         .size = db.attrs.size.get(field_id),
     });
     errdefer db.destroy_entity(id);
 
     try db.attrs.@"enum".putNoClobber(db.gpa, field_id, id);
+
+    if (node.get_attribute("derivedFrom")) |derived_from|
+        try ctx.add_derived_entity(id, derived_from);
 
     var value_it = node.iterate(&.{}, &.{"enumeratedValue"});
     while (value_it.next()) |value_node|

@@ -1,0 +1,48 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build Firmware",
+			"type": "shell",
+			"command": "zig",
+			"args": [
+			  "build",
+			  "\"-Doptimize=Debug\"",
+			  "--summary","all",
+			  "--verbose"
+			],
+			"options": {
+			 
+			},
+			"group": {
+			  "kind": "build",
+			  "isDefault": true
+			},
+			"problemMatcher": [
+			  "$zig"
+			],
+		  },
+
+		  {
+			"label": "Start Renode",
+			"type": "shell",
+			"command": "renode",
+			"args": [
+			  "tools/renode/eos-s3.resc"
+			],
+			"options": {
+			 
+			},
+			"group": {
+			  "kind": "build",
+			  "isDefault": false
+			},
+			"problemMatcher": [
+			  "$gcc"
+			],
+			"dependsOn" :[
+				"Build Firmware"
+			],
+		  }
+	]
+}

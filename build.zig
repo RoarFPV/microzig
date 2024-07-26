@@ -12,6 +12,7 @@ const example_dep_names: []const []const u8 = &.{
     "examples/stmicro/stm32",
     //"examples/espressif/esp",
     "examples/raspberrypi/rp2040",
+    "examples/quicklogic/eos-s3",
 };
 
 const bsps = .{
@@ -23,6 +24,7 @@ const bsps = .{
     .{ "bsp/stmicro/stm32", @import("bsp/stmicro/stm32") },
     .{ "bsp/espressif/esp", @import("bsp/espressif/esp") },
     .{ "bsp/raspberrypi/rp2040", @import("bsp/raspberrypi/rp2040") },
+    .{ "bsp/quicklogic/eos-s3", @import("bsp/quicklogic/eos-s3") },
 };
 
 pub fn build(b: *Build) void {

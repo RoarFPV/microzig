@@ -1,0 +1,15 @@
+.{
+    .name = "examples/quicklogic/eos-s3",
+    .version = "0.0.0",
+    .dependencies = .{
+        .@"microzig/build" = .{ .path = "../../../build" },
+        .@"microzig/bsp/quicklogic/eos-s3" = .{ .path = "../../../bsp/quicklogic/eos-s3" },
+    },
+
+    .paths = .{
+        "LICENSE",
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}

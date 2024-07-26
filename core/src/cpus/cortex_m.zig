@@ -21,7 +21,7 @@ const Core = enum {
 };
 
 const core: type = blk: {
-    const cortex_m = std.meta.stringToEnum(microzig.config.cpu_name) orelse @panic(std.fmt.comptimePrint("Unrecognized Cortex-M core name: {s}", .{microzig.config.cpu_name}));
+    const cortex_m = std.meta.stringToEnum(Core, microzig.config.cpu_name) orelse @panic(std.fmt.comptimePrint("Unrecognized Cortex-M core name: {s}", .{microzig.config.cpu_name}));
     break :blk switch (cortex_m) {
         .@"ARM Cortex-M0" => @import("cortex_m/m0"),
         .@"ARM Cortex-M0+" => @import("cortex_m/m0plus.zig"),
@@ -149,6 +149,32 @@ pub const vector_table: VectorTable = blk: {
     if (@hasDecl(root, "microzig_options")) {
         for (@typeInfo(root.VectorTableOptions).Struct.fields) |field|
             @field(tmp, field.name) = @field(root.microzig_options.interrupts, field.name);
+    }
+
+    if (@hasDecl(microzig.hal, "microzig_options") and @hasDecl(microzig.hal.microzig_options, "interrupts")) {
+        const interrupts = microzig.hal.microzig_options.interrupts;
+
+        for (@typeInfo(interrupts).Struct.decls) |decl| {
+            const function = @field(interrupts, decl.name);
+
+            if (!@hasField(VectorTable, decl.name)) {
+                var msg: []const u8 = "There is no such interrupt as '" ++ decl.name ++ "'. Declarations in 'interrupts' must be one of:\n";
+                for (std.meta.fields(VectorTable)) |field| {
+                    if (is_valid_field(field.name)) {
+                        msg = msg ++ "    " ++ field.name ++ "\n";
+                    }
+                }
+
+                @compileError(msg);
+            }
+
+            if (!is_valid_field(decl.name))
+                @compileError("You are not allowed to specify '" ++ decl.name ++ "' in the vector table, for your sins you must now pay a $5 fine to the ZSF: https://github.com/sponsors/ziglang");
+
+            @field(tmp, decl.name) = create_interrupt_vector(function);
+
+            //@field(tmp, field.name) = @field(root.microzig_options.interrupts, field.name);
+        }
     }
 
     break :blk tmp;

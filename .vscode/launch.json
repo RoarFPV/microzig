@@ -1,0 +1,96 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Tigard SWD",
+            "cwd": "${workspaceRoot}",
+            "executable": "${workspaceFolder}/zig-out/bin/firmware.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            // This may need to be arm-none-eabi-gdb depending on your system
+            //"gdbPath": "gdb-multiarch",
+            "device": "EOS-S3",
+            "configFiles": [
+                "${workspaceFolder}/tools/openocd/tigard-swd.cfg",
+                "target/eos_s3.cfg"
+            ],
+            //"openOCDLaunchCommands": ["adapter speed 5000"],
+            "searchDir": [
+                "C:/code/pico-sdk-win/openocd/scripts"
+            ],
+            "svdFile": "${workspaceFolder}/deps/svd/eos-s3.svd",
+            // "runToEntryPoint": "main",
+            "liveWatch": {
+                "enabled": false,
+                "samplesPerSecond": 4
+            },
+            //"serverArgs": ["-d"],
+            // Work around for stopping at main on restart
+            "preLaunchTask": "Build Firmware",
+            "postRestartCommands": [
+                // "break main",
+                // "continue"
+            ]
+        },
+        {
+            "type": "cppdbg",
+            "request": "launch",
+            "name": "Renode",
+            "program": "/bin/sh", //"/nix/store/yisjp6hkqc1qz8lmgnc0dklx0hgg9w2x-bash-5.2-p15/bin/bash",
+            "cwd": "${workspaceFolder}/examples/quicklogic/eos-s3",
+            "args": [
+                "-c",
+                "\"eval 'renode ${workspaceFolder}/bsp/quicklogic/eos-s3/tools/renode/eos-s3.resc'\""
+            ]
+            // "setupCommands": [
+            //     {
+            //         "text": "shell cd ${workspaceFolder}/examples/quicklogic/eos-s3 && renode ${workspaceFolder}/bsp/quicklogic/eos-s3/tools/renode/eos-s3.resc"
+            //     }
+            // ],
+        },
+        {
+            "name": "Cortex Debug Renode",
+            "cwd": "${workspaceFolder}/examples/quicklogic/eos-s3/",
+            "executable": "${workspaceRoot}/examples/quicklogic/eos-s3/zig-out/firmware/blinky.elf",
+            "device": "eos-s3",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "servertype": "external",
+            "gdbTarget": "localhost:3333",
+            "armToolchainPath": "/nix/store/1wdvbi5ihwys1xwzl3icjr5gz9iyx6cr-gcc-arm-embedded-12.3.rel1/bin",
+            // "toolchainPrefix": "arm-none-eabi-",
+            //"gdbPath": "gdb",
+            "svdFile": "${workspaceRoot}/bsp/quicklogic/eos-s3/src/chips/eos-s3.svd",
+            "showDevDebugOutput": "parsed",
+            "configFiles": null,
+            // "overrideLaunchCommands": [
+            //     "monitor start",
+            //     "continue"
+            // ],
+            "overrideRestartCommands": [
+                "monitor pause",
+                "monitor runMacro $reset"
+            ],
+            "postStartSessionCommands": [
+                "break main"
+            ],
+            //"preLaunchTask": "Build Firmware",
+        },
+    ],
+    "compounds": [
+        {
+            "name": "Renode + eos-s3",
+            "configurations": [
+                "Renode",
+                "Cortex Debug Renode",
+            ],
+            "preLaunchTask": "Build Firmware",
+            "stopAll": true,
+        }
+    ]
+}
